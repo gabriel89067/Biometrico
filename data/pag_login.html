@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Biométrico de Acesso Página Sobre</title>
+    <style>
+        html {
+            font-family: Eurostile;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        footer {
+            background-color: #8B0000;
+            padding: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        fieldset {
+            width: 300px;
+        }
+
+        .centralizar {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <fieldset>
+
+            <legend> Login Administrador </legend>
+            <br>
+
+            <div class="centralizar">
+                Usuário:
+                <input type="text" name="login_admin" id="login_admin" oninput="atualiza_senha()">
+                <br><br>
+                Senha: &nbsp;&nbsp;
+                <input type="password" name="senha_admin" id="senha_admin" oninput="atualiza_senha()">
+                <br><br>
+                <button onclick="verifica_senha_admin()" id="configura_senha">Logar</button>
+            </div>
+        </fieldset>
+    </main>
+
+    <footer>PUR Equipamentos Industriais</footer>
+
+    <script type="text/javascript">
+
+        var config_senha = { login_admin: '', senha_admin: '' };
+        const link = 'http://192.168.1.1/';
+
+        function atualiza_senha() {
+            config_senha.login_admin = document.getElementById('login_admin').value;
+            config_senha.login_admin = String(config_senha.login_admin);
+            config_senha.senha_admin = document.getElementById('senha_admin').value;
+            config_senha.senha_admin = String(config_senha.senha_admin);
+        }
+
+        function verifica_senha_admin() {
+
+            var xhr = new XMLHttpRequest();
+            if (!check_admin_campo()) {
+
+                xhr.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        console.log("Comando configuarar enviado" + this.status);
+                        alert('Login correto.');
+                        window.location.href = "/pag_home.html"
+                    }
+                    else if (this.readyState == 4 && this.status == 400) {
+                        console.log("comando configuarar não enviado. status:" + this.status);
+                        alert('Login ou Senha Incorretos.');
+                    }
+                };
+                xhr.open("POST", link + 'login/', true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.send("login_admin=" + config_senha.login_admin + "&senha_admin=" + config_senha.senha_admin);
+            }
+
+        }
+
+        function check_admin_campo() {
+            let campoVazio = false;
+            if (document.getElementById("login_admin").value === '') {
+                alert('Campo de login de administrador não pode ficar vazio.');
+                campoVazio = true;
+            } else if (document.getElementById("senha_admin").value === '') {
+                alert('Campo de senha de administrador não pode ficar vazio.');
+                campoVazio = true;
+            } else if (document.getElementById("senha_admin").value.length < 5) {
+                alert('A senha admin deve conter no mínimo 5 dígitos!');
+                campoVazio = true;
+            }
+            return campoVazio;
+
+        }
+
+
+
+    </script>
+
+
+
+
+
+
+</body>
+
+</html>

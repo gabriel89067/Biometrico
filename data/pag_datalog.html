@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Biométrico de Acesso Página Datalog</title>
+	<style> html {font-family: Eurostile;}
+body  {
+  margin: 0;
+}
+
+footer {        /* footer PUR */
+  background-color: #8B0000;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+   
+ul {   /*sidebar */
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 25%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {    
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #8B0000;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 5px;
+}
+th,td {
+  text-align: center;
+}
+	</style>
+</head>
+<body>
+
+<ul>
+	<li><a href="pag_home.html">HOME</a></li>
+	<li><a class="active" href="pag_datalog.html">DATALOG</a></li>
+	<li><a href="pag_cadastro.html">CADASTRO</a></li>
+	<li><a href="pag_usuarios.html">USUÁRIOS</a></li>
+	<li><a href="pag_rtc.html">CONFIGURAÇÕES</a></li>
+	<li><a href="pag_contato.html">CONTATO</a></li>
+	<li><a href="pag_sobre.html">SOBRE</a></li>
+</ul>
+
+<div style = "margin-left:25%;padding:1px 16px;height:1000px;">
+  <h2>DATALOG</h2>
+
+<table style="width:100%" id ="tabelaDatalog"> </table>
+<br> 
+<button id="logDownload" onclick="buscaTodosLogs()">Download Datalog</button> <!-- link para download do datalog completo -->
+<p>Progresso:</p>
+<progress id="barraProgresso" value="" max=""> </progress>
+<br><br>
+  <footer>PUR Equipamentos Industriais</footer>
+</div>
+
+<script type="text/javascript" src="papaParse.js"></script>
+
+<script type="text/javascript"> 
+	// criação dos elementos da tabela preenchida de acordo com as caracteristicas dos 10 primeiros objetos
+
+	// declaração de variáveis
+	var dadoUsuario;   
+	var tabela = document.getElementById('tabelaDatalog');
+	var link = "http://192.168.1.1/";
+	const TIMEOUT_CONEXAO = 5000; 
+	
+
+  	document.body.onload = adicionaTabela;  
+  	document.body.onload = requisitaLogs; 
+   
+	function adicionaTabela() {
+    	for (i = 0 ; i < dadoUsuario.length ; i++)     // adiciona a quantidade de linhas, já com a id, de acordo com a quantidade de usuários
+		{
+	  		let linha = tabela.insertRow(i);
+	  		document.getElementsByTagName('tr')[i].setAttribute('id', i);
+		}			
+	
+		// criação do cabeçalho da tabela
+			var tabelaHeader = document.createElement('th');        
+			let textoNome = document.createTextNode('Nome');            // nome
+			tabelaHeader.appendChild(textoNome);
+	
+			tabela.insertBefore(tabelaHeader , tabela.childNodes[0]);
+	
+			var tabelaHeader = document.createElement('th');
+			let textoMatricula = document.createTextNode('Matrícula');  // matrícula
+			tabelaHeader.appendChild(textoMatricula);
+	
+			tabela.insertBefore(tabelaHeader , tabela.childNodes[1]);
+	
+			var tabelaHeader = document.createElement('th');
+			let textoAcao = document.createTextNode('Ação');          // ação
+			tabelaHeader.appendChild(textoAcao);
+	
+			tabela.insertBefore(tabelaHeader , tabela.childNodes[2]);
+	
+			var tabelaHeader = document.createElement('th');
+			let textoData = document.createTextNode('Data/Hora');   // data e hora da ação
+			tabelaHeader.appendChild(textoData);
+	
+			tabela.insertBefore(tabelaHeader , tabela.childNodes[3]);
+	
+	
+		var linhasTabela = document.querySelectorAll('tr');   // adiciona as células com os dados do usuário na tabela
+	
+		for(j = 0 ; j < linhasTabela.length ; j++)           
+		{
+	 		let celula0 = linhasTabela[j].insertCell(0);
+	  		celula0.innerHTML = dadoUsuario[j].nome;
+	  
+	  		let celula1 = linhasTabela[j].insertCell(1);
+	  		celula1.innerHTML = dadoUsuario[j].matricula;
+	  
+	  		let celula2 = linhasTabela[j].insertCell(2)
+	  		celula2.innerHTML = dadoUsuario[j].acao === 0 ? "Bloquear":"Desbloquear";
+	  
+	  		let celula3 = linhasTabela[j].insertCell(3); 	  
+	  		celula3.innerHTML = (new Date (dadoUsuario[j].epoch * 1000)).toLocaleDateString() + ' - ' + (new Date (dadoUsuario[j].epoch * 1000)).toLocaleTimeString();	  
+		}		
+  	}
+   
+function enviaRequisicao(informacao) {
+      return new Promise((resolve)=> {
+		  let xhr = new XMLHttpRequest();	  
+		  xhr.onreadystatechange = function() {
+			  if(this.readyState == 4)		    
+				  resolve(this);			  		  	
+			}
+			if(informacao.metodo === "GET") {
+			  xhr.open(informacao.metodo, informacao.link + "?" + informacao.query, true);
+			  xhr.send();
+			}
+			else {
+			  xhr.open(informacao.metodo, informacao.link, true);
+			  xhr.send(informacao.query);			
+			}
+		});
+    }
+	
+	function requisitaLogs() {
+		var offset; 
+		var quantidade , quantidadeTotal;
+		const QUANTIDADE_MAXIMA = 10;
+		var listaUsuarios;  
+		var listaLogs;
+	  
+		enviaRequisicao({metodo:"GET", link: link + "logs/quantidade/", query:""}).then((resposta) => {
+			if(resposta.status == 200) {
+				console.log("1º requisição com sucesso");
+				quantidadeTotal = resposta.responseText;
+				if(quantidadeTotal <= QUANTIDADE_MAXIMA) {
+					offset = 0;
+					quantidade = quantidadeTotal;
+				}
+				else {
+					offset = quantidadeTotal - QUANTIDADE_MAXIMA;
+					quantidade = QUANTIDADE_MAXIMA;
+				}
+				enviaRequisicao({metodo:"GET", link: link + "usuarios/", query: "matricula="}).then((usuarios) => {
+					if(usuarios.status == 200){
+						console.log("2º requisição com sucesso");
+						listaUsuarios = JSON.parse(usuarios.responseText);
+						enviaRequisicao({metodo:"GET", link: link + "logs/", query:"offset=" + offset + "&quantidade=" + quantidade}).then((logs) => {
+							if(logs.status == 200) {
+								console.log("3º requisição com sucesso");
+								listaLogs = JSON.parse(logs.responseText);
+								let encontrou;
+								listaLogs.forEach((value) => {
+									for(let i = 0 ; i < listaUsuarios.length ; i++) {
+									encontrou = false;
+										//listaUsuarios[i].matricula;
+										if(listaUsuarios[i].matricula === value.matricula) {
+											value.nome = listaUsuarios[i].nome;
+											encontrou = true;
+											break;
+										}
+									}
+									if (!encontrou) {
+										value.nome = "Usuario inexistente";
+									}
+								});
+							}
+							dadoUsuario = listaLogs;
+							adicionaTabela();
+						})	  
+					}
+				})
+			}
+		})
+	}
+
+function novoLog(quantidade, offset) {
+	return new Promise((resolve, reject) => {//'resolve' quando o sistema retornou 200 e 'reject' quando houve falha de timeout
+		let xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200)
+			resolve(JSON.parse(this.responseText));
+		}
+	xhttp.open("GET", link + "logs/" + "?quantidade=" + quantidade + "&offset=" + offset);
+	xhttp.timeout = TIMEOUT_CONEXAO;
+	xhttp.ontimeout = () => {reject(new Error("Timeout"))};
+	xhttp.send();
+	});
+}
+
+function listaUsuarios() {
+return new Promise((resolve, reject) => { //'resolve' quando o sistema retornou 200 e 'reject' quando houve falha de timeout
+	let xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200)
+			resolve(JSON.parse(this.responseText));
+		}
+		xhttp.open("GET", link + "usuarios/" + "?matricula=");
+		xhttp.timeout = TIMEOUT_CONEXAO;
+		xhttp.ontimeout = () => {reject(new Error("Timeout"))};
+		xhttp.send();
+	});
+}
+
+function quantidadeLogs() {
+	return new Promise((resolve, reject) => {//'resolve' quando o sistema retornou 200 e 'reject' quando houve falha de timeout
+	let xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200)
+			resolve(parseInt(this.responseText));
+		}
+		xhttp.open("GET", link + "logs/quantidade/");
+		xhttp.timeout = TIMEOUT_CONEXAO;
+		xhttp.ontimeout = () => {reject(new Error("Timeout"))};
+		xhttp.send();
+	});
+}
+
+async function obterLogs() {
+	var quantidadeTotal = await quantidadeLogs();
+	document.getElementById("barraProgresso").max=quantidadeTotal;
+	const LIMITE = 500; //Limite de dados por requisicao
+	var nPacotes = Math.ceil(quantidadeTotal/LIMITE); //Arredonda para cima
+	var offset = 0;
+	var logSaida = [];
+	for (let i=0; i<nPacotes; i++)
+	{	
+		document.getElementById("barraProgresso").value=offset+LIMITE;
+		if (i == nPacotes-1) //Ultimo pacote?
+		logSaida = logSaida.concat(await novoLog(quantidadeTotal-i*LIMITE, offset));
+		else
+		logSaida = logSaida.concat(await novoLog(LIMITE, offset));
+		offset += LIMITE;
+	}
+	return logSaida;
+}
+
+function buscaTodosLogs() {
+	var saidaFormatada = [];
+	const MSG_BLOQUEIO = "Bloqueio";
+	const MSG_DESBLOQUEIO = "Desbloqueio";
+	var data;
+
+	listaUsuarios().then((listaUsuarios) => {
+		obterLogs().then((saida) => {
+			saida.forEach((value, index) => {
+				data = new Date(value.epoch*1000);
+				value.epoch = data.toLocaleDateString() + " -- " + data.toLocaleTimeString();
+				if (value.acao == 0)
+					value.acao = MSG_BLOQUEIO;
+				else
+					value.acao = MSG_DESBLOQUEIO;
+				for (let i=0; i<listaUsuarios.length; i++) {
+					if (value.matricula === listaUsuarios[i].matricula) {
+						value.nome = listaUsuarios[i].nome;
+						break;
+					}							
+				}
+				saidaFormatada = saidaFormatada.concat(value);
+			});
+		console.log(saidaFormatada);
+		save("datalog.csv", Papa.unparse(JSON.stringify(saidaFormatada)));
+	})
+		.catch(err => {
+			//Tratar o erro de timeout
+			console.log(err);
+			alert('Rede desconectada! Reconecte-se a rede Wi-Fi.');
+			// criar elemento avisando do erro
+		})
+	})
+	.catch(err => {
+		//Tratar o erro de timeout
+		console.log(err);
+		alert('Rede desconectada! Reconecte-se a rede Wi-Fi');
+		// criar elemento avisando do erro
+	})
+		
+}
+	
+function save(filename, data) {
+    var blob = new Blob([data], {type: 'text/csv'});
+    if(window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveBlob(blob, filename);
+    }
+    else {
+        var elem = window.document.createElement('a');
+        elem.href = window.URL.createObjectURL(blob);
+        elem.download = filename;        
+        document.body.appendChild(elem);
+        elem.click();        
+        document.body.removeChild(elem);
+    }
+}
+ 	
+</script>
+
+</body>
+</html>
+

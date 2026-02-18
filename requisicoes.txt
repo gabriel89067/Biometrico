@@ -1,0 +1,24 @@
+requisição DELETE 
+const dados = new URLSearchParams();
+dados.append("matricula",123);
+
+fetch("http://192.168.1.1/usuarios/", { 
+ method: "DELETE",
+ hedears: {
+     "Content-Type" : "application/x-www-form-urlencoded"
+ },
+   body: dados
+})
+.then(res => res.json())
+.then(data => console.log(data))
+.then(err => console.error(err))
+
+
+Requisiçao GET 
+/// printa todos
+
+fetch("http://192.168.1.1/usuarios/?matricula=", { 
+ method: "GET"
+})
+.then(res => res.text())
+.then(texto => console.log(texto))

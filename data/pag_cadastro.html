@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html> 
+<head> 
+  <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Biométrico de Acesso Página de Cadastro</title>
+  <style> html {font-family: Eurostile;}
+  body  {
+  margin: 0;
+}
+
+footer {        /* footer PUR */
+  background-color: #8B0000;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+   
+ul {   /*sidebar */
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 25%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {    
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #8B0000;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 5px;
+}
+th,td {
+  text-align: center;
+}
+
+  </style>
+</head>
+<body>
+
+  <ul>
+    <li><a href="pag_home.html">HOME</a></li>
+    <li><a href="pag_datalog.html">DATALOG</a></li>
+    <li><a class="active" href="pag_cadastro.html">CADASTRO</a></li>
+    <li><a href="pag_usuarios.html">USUÁRIOS</a></li>
+    <li><a href="pag_rtc.html">CONFIGURAÇÕES</a></li>
+    <li><a href="pag_contato.html">CONTATO</a></li>
+    <li><a href="pag_sobre.html">SOBRE</a></li>
+   </ul>
+
+<div style="margin-left:25%;padding:1px 16px;height:1000px;">
+  <h2>CADASTRO DE USUÁRIOS</h2>
+  <fieldset>
+  <legend>Dados:</legend>
+
+ <div class= 'dadoUsuario' id='infoUsuario'>
+     Nome:<br>
+     <input type="text" id="nome" name="nome">
+     <br><br>
+     Matrícula:<br>
+     <input type="number" id="matricula"  name="matricula" >
+     <label for="matricula" id="matriculaLabel"> </label>	 
+     <br><br>
+     <label for="nivel">Nível: </label>
+     <select id="nivel">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option> 
+     </select>  
+     <br><br>
+     Validade da biometria:<br>
+     <input type="date" id="epoch" name="epoch">
+     <br><br>
+     <input type="submit" value="Confirmar" id="cadastroConfirm" onclick ="enviaDado()"> 
+  </form> 
+ </div>
+  
+</fieldset>
+ <br>
+ <br>
+ <footer>PUR Equipamentos Industriais</footer>
+
+<script type ="application/javascript"> // código para página cadastro 
+
+  // declaração de varáveis globais    
+  const dadoUsuario = {nome:'', matricula:0, epoch:0,nivel:1}; 
+  const link = 'http://192.168.1.1/';
+  
+  function checkCampoVazio() {   // check para não permitir envio de dados vazios e matrícula de tamanho incorreto
+      
+    let campoVazio = false;  
+ 	
+    if (document.getElementById("nome").value === '') 
+    {
+	    alert('Campos de Nome e Matrícula não podem ficar vazios.');
+      campoVazio = true;	  
+    }  
+    else if(document.getElementById("matricula").value === '')
+    {
+      alert('Campos de Nome e Matrícula não podem ficar vazios.');
+      campoVazio = true;	  
+    }   
+    else if (String(dadoUsuario.matricula).length > 6)
+    {
+	    alert('A matrícula deve conter no máximo 6 dígitos!');
+	    campoVazio = true;
+	  }	   
+   return campoVazio;
+  }
+
+function adicionarUsuario() {  // adiciona o conteudo dos inputs no objeto dadoUsuario 
+  dadoUsuario.nome = document.getElementById("nome").value;                
+	dadoUsuario.nome = String(dadoUsuario.nome);                             // nome tipo string
+  dadoUsuario.matricula = document.getElementById("matricula").value;  
+	dadoUsuario.matricula = parseInt(dadoUsuario.matricula);                 // matrícula tipo numérico
+	dadoUsuario.epoch = document.getElementById("epoch").value;        
+	dadoUsuario.epoch = new Date(dadoUsuario.epoch).valueOf() / 1000;  // epoch em epoch(s)    
+  dadoUsuario.nivel = document.getElementById("nivel").value; 
+  dadoUsuario.nivel = parseInt(dadoUsuario.nivel); 
+
+} 
+    
+  function enviaDado() {  // requisição de passagem de dados para o servidor 
+    adicionarUsuario();        //////////////////////////////////////////////////
+    var xhr = new XMLHttpRequest();
+	  if(!checkCampoVazio())
+	  {
+      xhr.onreadystatechange = function()
+	    {
+	      if (this.readyState == 4 && this.status == 200)   
+	      {
+		      document.getElementById('matriculaLabel').innerHTML = 'Usuário cadastrado com sucesso!';
+		      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);
+		      document.getElementById('nome').value = '';
+		      document.getElementById('matricula').value = '';
+		      document.getElementById('epoch').value = '';
+          document.getElementById('nivel').value = '1';
+	      }		
+		    else if (this.readyState == 4 && this.status == 400) { // trata o retorno da informação do mcu em JSON contendo o erro especificado
+		      JSON.parse(this.responseText);
+		      let respostaErro = JSON.parse(this.responseText);
+		  
+		      switch(respostaErro.codigo) { // respostas de erro		      
+		        case 1:
+			        console.log('Falha de comunicação...');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: Falha de comunicação!';
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);
+			        break;			
+			      case 2:
+			        console.log('ID já cadastrada!');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: ID já cadastrada!';
+				      document.getElementById('matricula').focus();
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);
+			        break;			
+			      case 3: 
+			        console.log('ID inválida!');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: ID inválida!';
+				      document.getElementById('matricula').focus();
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);
+			        break;			  
+			      case 4:
+              console.log('Digital não colocada a tempo.');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: Digital não colocada a tempo! Confirme novamente';
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);				
+			        break;				
+			      case 5: 
+              console.log('Erro não especificado.');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: Erro não especificado';
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);	
+			       break;			
+			      case 6:
+             console.log('Digitais de dedos diferentes.');
+				      document.getElementById('matriculaLabel').innerHTML = 'Erro: As digitais não são do mesmo dedo! Confirme novamente.';
+				      setTimeout(function(){document.getElementById('matriculaLabel').innerHTML = ''}, 4000);	
+				      break;
+            case 7:
+              console.log('número de usuários excedido');
+              document.getElementById('labelExclusao').innerHTML = 'Erro: Número máximo de usúários excedido!';
+              setTimeout(function(){document.getElementById('labelExclusao').innerHTML = ''}, 4000);
+              break;
+            default:;				
+		      }
+		    }	  
+	    };	  
+	    xhr.open("POST", link + "usuarios/", true);
+	    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      //xhr.setRequestHeader("Content-Type", "application/json");
+	    xhr.send("nome=" + dadoUsuario.nome + "&matricula=" + dadoUsuario.matricula + "&epoch=" + dadoUsuario.epoch + "&nivel=" + dadoUsuario.nivel);
+      //xhr.send(JSON.stringify(dadoUsuario));	 	  
+	  }
+  }  
+</script>
+
+</body>
+</html>

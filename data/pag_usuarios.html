@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Biométrico de Acesso Página Usuários</title>
+  <style> html {font-family: Eurostile;}
+body  {
+  margin: 0;
+}
+.topnav {
+  overflow: hidden;
+  background-color: #8B0000;
+  padding: 10px;
+  text-align: left;
+  color: white;
+}
+.topnav input[type=text] { 
+  float: center;
+  padding: 4px 30px;
+  border: 2px solid rgb(155, 155, 155);
+  margin-top: 15px;
+  margin-right: 15px;
+  font-size: 14px;
+}
+.topnav input[type=number] { 
+  float: center;
+  padding: 4px 30px;
+  border: 2px solid rgb(155, 155, 155);
+  margin-top: 15px;
+  margin-right: 15px;
+  font-size: 14px;
+}
+footer {    /* footer PUR */
+  background-color: #8B0000;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}   
+ul {   /*sidebar */
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 25%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+li a {    
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+li a.active {
+  background-color: #8B0000;
+  color: white;
+}
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 5px;
+}
+th,td {
+  text-align: center;
+}
+tr {
+  transition:all .25s ease-in-out
+}
+tr:hover {
+  background-color:#EEE;cursor: pointer
+}
+  </style>
+</head>
+<body>
+
+  <ul>
+    <li><a href="pag_home.html">HOME</a></li>
+    <li><a href="pag_datalog.html">DATALOG</a></li>
+    <li><a href="pag_cadastro.html">CADASTRO</a></li>
+    <li><a  class="active" href="pag_usuarios.html">USUÁRIOS</a></li>
+    <li><a href="pag_rtc.html">CONFIGURAÇÕES</a></li>
+    <li><a href="pag_contato.html">CONTATO</a></li>
+    <li><a href="pag_sobre.html">SOBRE</a></li>
+  </ul>
+
+<div style="margin-left:25%;padding:1px 16px;height:1000px;">
+  <h2>USUÁRIOS CADASTRADOS</h2>
+  
+<br>
+<div class="topnav">
+<fieldset>
+<label for="pesquisaNomes" style="font-size:18px;"><strong>Barra de pesquisa:</strong> </label> 
+<input type="text" id="pesquisaNomes" onkeyup="pesquisaNomes()" placeholder="Pesquisar por nome..">
+<input type="number" id="pesquisaMatricula" onkeyup="pesquisaMatricula()" placeholder="Pesquisar por matrícula.."> <br>
+</fieldset> 
+</div>
+<br>
+<div>
+<br>
+  <fieldset>
+    <legend>Alterar Informações</legend>   
+      <label for="matricula">Matrícula:</label>
+      <input type="number" id="matricula"  placeholder="Matrícula" oninput="alteraDados()">
+	    <label for="novoNome">Novo nome: </label>
+      <input type="text" id="novoNome" placeholder="Novo nome" oninput ="alteraDados()">
+      <label for="nivel">Nível: </label>
+     <select id="novo_nivel" onchange = "alteraDados()">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option> 
+     </select>
+      <label for="novaValidade">Nova Validade: </label>
+      <input type="date" id="novaValidade" oninput ="alteraDados()"> 
+      <br><br>
+      <input type="submit" value="Confirmar alteração" id="cadastroConfirm" onclick ="enviaDado()">
+  </fieldset>
+  <br>
+<fieldset>
+  <legend>Excluir Usuário</legend>
+    <label for="excluirUsuario">Excluir a matrícula:</label>
+    <input type="number" id="excluirUsuario" placeholder="Matricula" oninput="alteraDados()">
+    <label for="excluirUsuario" id="labelExclusao"></label>
+    <br>
+    <br>
+    <button onclick="excluirUsuario()">Excluir</button>
+</fieldset>
+</div>
+<br><br>
+<table style="width:100%" id="tabelaUsuarios">
+  <thead>
+    <tr>
+      <th>NOME</th>
+      <th>MATRÍCULA</th>
+      <th>NÍVEL</th>
+      <th>VALIDADE</th>
+    </tr>  
+  </thead>
+  <tbody id="corpoTabela">
+
+  </tbody>
+</table> 
+<br>
+<br> 
+<footer>PUR Equipamentos Industriais</footer>
+
+<script>
+// código para página usuários
+const link = "http://192.168.1.1/";
+const TIMEOUT_CONEXAO = 5000;
+
+var matriculaExcluida; // variável para armazenar a resposta de listaUsuarios() com todos os usuários cadastrados
+var alteracao = {nome:'', matricula:0, epoch:0,nivel:1}; // variável para armazenar alterações dos dados do usuário
+
+document.body.onload = pegarListaUsuarios();
+
+function alteraDados() {
+  alteracao.nome = document.getElementById('novoNome').value;  
+  alteracao.nome = String(alteracao.nome);                           //  novo nome tipo string
+  alteracao.matricula = document.getElementById('matricula').value;
+  alteracao.matricula = parseInt(alteracao.matricula);               // matricula tipo numerico
+  alteracao.epoch = document.getElementById('novaValidade').value;
+  alteracao.epoch = new Date(alteracao.epoch).valueOf() / 1000 + 23*60*60 + 59*60;      //  nova validade em epoch(s) - deve expirar somente as 23h59
+  alteracao.nivel = document.getElementById('novo_nivel').value;
+  alteracao.nivel = parseInt(alteracao.nivel);  
+  matriculaExcluida = document.getElementById('excluirUsuario').value;
+  matriculaExcluida = parseInt(matriculaExcluida);       
+
+}
+
+function pesquisaNomes() {  // função para pesquisar nomes na tabela    
+  // Declaração de variáveis
+  var input, filtro, tabela, tr, td, i, exibeNome;
+  input = document.getElementById("pesquisaNomes");
+  filtro = input.value.toUpperCase();
+  tabela = document.getElementById("tabelaUsuarios");
+  tr = tabela.getElementsByTagName("tr");
+
+  // Varre todas as colunas dos nomes e exibe somente o resultado pesquisado 
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];  // filtra pelo conteúdo da primeira coluna que é: nome
+    if (td) {
+      exibeNome = td.textContent || td.innerText;
+      if (exibeNome.toUpperCase().indexOf(filtro) > -1) {
+        tr[i].style.display = "";
+      } 	  
+	    else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+
+function pesquisaMatricula() {
+  let input, filtro, tabela, tr, td, i, exibeMatricula;
+  input = document.getElementById('pesquisaMatricula');
+  filtro = input.value.toUpperCase();
+  tabela = document.getElementById('tabelaUsuarios');
+  tr = tabela.getElementsByTagName('tr');
+
+  for(i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[1]; // filtra pelo conteúdo da segunda coluna que é: matrícula
+    if(td){
+      exibeMatricula = td.textContent || td.innerText;
+      if(exibeMatricula.toUpperCase().indexOf(filtro) > -1) {
+        tr[i].style.display = "";
+      }
+      else{
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+
+function listaUsuarios() {  // requisita e gera um objeto lista de usuários que vem com -> nome, matricula e epoch
+return new Promise((resolve, reject) => { //'resolve' quando o sistema retornou 200 e 'reject' quando houve falha de timeout
+	let xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200)
+			resolve(JSON.parse(this.responseText));
+		}    
+		xhttp.open("GET", link + "usuarios/" + "?matricula=");
+		xhttp.timeout = TIMEOUT_CONEXAO;
+		xhttp.ontimeout = () => {reject(new Error("Timeout"))};
+		xhttp.send();
+	});
+}
+
+function pegarListaUsuarios() {
+  listaUsuarios().then((resposta) => {
+    var todosUsuarios = resposta;
+    adicionaTabela(todosUsuarios);
+  })
+  .catch((reject) => {
+    console.log('Erro: timeout', reject);
+  })
+}
+
+function adicionaTabela(todosUsuarios) {
+  let tabelaCorpo = document.getElementsByTagName('tbody')[0];
+  for(let i = 0 ; i < todosUsuarios.length ; i++) {
+    let linha = tabelaCorpo.insertRow(i);
+  }
+  
+  let linhasTabela = document.getElementsByTagName('tbody')[0].getElementsByTagName('tr'); 
+  // adiciona as células com os dados do usuário na tabela	
+  for(let j = 0 ; j < linhasTabela.length ; j++) {
+    let celula0 = linhasTabela[j].insertCell(0);
+    celula0.innerHTML = todosUsuarios[j].nome;
+  
+    let celula1 = linhasTabela[j].insertCell(1);
+    celula1.innerHTML = todosUsuarios[j].matricula;
+   
+    let celula2 = linhasTabela[j].insertCell(2);
+    celula2.innerHTML = todosUsuarios[j].nivel;
+
+    let celula3 = linhasTabela[j].insertCell(3);	  
+    celula3.innerHTML = todosUsuarios[j].epoch === 0 ? "indefinida" : (new Date (todosUsuarios[j].epoch * 1000 + 3*60*60*1000)).toLocaleDateString();   
+  }
+}
+
+function enviaDado() {
+  var xhr = new XMLHttpRequest();
+  if(!checkCampoVazio()) {
+    xhr.onreadystatechange = function() {
+      if(this.readyState == 4 && this.status == 200) {
+        console.log('Dados enviados');
+        alert("Usuário atualizado");
+        document.getElementById("")
+      }
+      else if(this.readyState == 4 && this.status == 404) {
+        console.log('Falha ao enviar');
+        alert("Matrícula inexistente");
+      }   
+    };
+    xhr.open("PUT", link + 'usuarios/', true);
+    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhr.send("nome=" + alteracao.nome +  "&matricula=" + alteracao.matricula + "&epoch=" + alteracao.epoch + "&nivel=" + alteracao.nivel);
+  } 
+}
+
+function checkCampoVazio() {   // check para não permitir envio de dados vazios   
+  let campoVazio = false;
+	
+  if (document.getElementById("novoNome").value === '') {
+	  alert('Campo de "Matrícula" e "Novo Nome" não podem ficar vazios.');
+    campoVazio = true;	  
+  }
+  else if(document.getElementById("matricula").value === '') {
+    alert('Campo de "Matrícula" e "Novo Nome" não podem ficar vazios.');
+    campoVazio = true;
+  }
+  return campoVazio;
+}
+
+function checkExclusao() {
+  let campoExclusao = false;
+
+  if(document.getElementById('excluirUsuario').value === '') {
+    alert('Campo de exclusão não pode ficar vazio.');
+    campoExclusao = true;
+  }
+  return campoExclusao;
+}
+
+function excluirUsuario() {
+  var xhr = new XMLHttpRequest();
+  if(!checkExclusao()) {
+    xhr.onreadystatechange = function() {
+      if(this.readyState == 4 && this.status == 200) {
+        console.log('Exclusão realizada.');
+        document.getElementById('labelExclusao').innerHTML = 'Exclusão bem sucedida.';
+        setTimeout(function(){document.getElementById('labelExclusao').innerHTML = ''; window.location.reload()}, 4000);
+      }
+      else if(this.readyState == 4 && this.status == 400) {
+        console.log('Falha ao exluir usuário.');
+        let respostaErro = JSON.parse(this.responseText);
+        switch(respostaErro.codigo) {
+          case 1:
+            console.log('Falha de comunicação!');
+            document.getElementById('labelExclusao').innerHTML = 'Erro: Falha de comunicação!';
+            setTimeout(function(){document.getElementById('labelExclusao').innerHTML = ''}, 4000);
+            break;
+          case 3:
+            console.log('ID inválida');
+            document.getElementById('labelExclusao').innerHTML = 'Erro: ID inválida!';
+            setTimeout(function(){document.getElementById('labelExclusao').innerHTML = ''}, 4000);
+            break;
+         
+          default:;  
+        }
+      }
+    };
+    xhr.open("DELETE", link + 'usuarios/', true);
+    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhr.send("matricula=" + matriculaExcluida); 
+   
+  }  
+}
+
+</script>
+
+</body>
+</html>

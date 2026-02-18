@@ -1,0 +1,302 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Biométrico de Acesso Página Configurações</title>
+  <style> html {font-family: Eurostile;}
+body  {
+  margin: 0;
+}
+footer {        /* footer PUR */
+  background-color: #8B0000;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}   
+ul {   /*sidebar */
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 25%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+li a {    
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+li a.active {
+  background-color: #8B0000;
+  color: white;
+}
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+.aviso{
+  color: rgba(0,0,0,0.5);
+}
+  </style>
+</head>
+<body>
+
+  <ul>
+    <li><a href="pag_home.html">HOME</a></li>
+    <li><a href="pag_datalog.html">DATALOG</a></li>
+    <li><a href="pag_cadastro.html">CADASTRO</a></li>
+    <li><a href="pag_usuarios.html">USUÁRIOS</a></li>
+    <li><a class="active" href="pag_rtc.html">CONFIGURAÇÕES</a></li>
+    <li><a href="pag_contato.html">CONTATO</a></li>
+    <li><a href="pag_sobre.html">SOBRE</a></li>
+  </ul>
+
+<div style="margin-left:25%;padding:1px 16px;height:1000px;">
+  <h2>CONFIGURAÇÕES DATA E HORA </h2>
+
+  <fieldset>
+    <legend>Data e Hora</legend>
+      Data e Hora atuais:
+      <input id="dataHora" disabled> <br><br>
+
+      Alterar Data:
+       <input type="date" name="data" id="rtcData" oninput="rtcInput()"> &nbsp;
+      Alterar Hora:
+      <input type="time" name="hora" id="rtcHora" placeholder="hh:mm:ss" oninput="rtcInput()">
+      <br><br>
+    <input type="submit" value="Confirmar" id="confirmar" onclick="enviaDado()">
+    <label for="confirmar" id="labelConfirmar"></label>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend> Reset do Produto </legend>
+    <button onclick="apagaLogs()" id="apagaLogs">Apagar DATALOGs</button> 
+    <button onclick="apagaTudo()" id="apagaTudo">Apagar Tudo</button>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend> Alterar Login/Senha Wifi </legend>
+    Novo Ssid Wifi:&nbsp;&nbsp;
+   <input type="text" name="ssid_wifi" id="ssid_wifi" onclick="atualiza_senha">
+   <br><br>
+    Nova Senha Wifi:
+   <input type="password" name="senha_wifi" id="senha_wifi" onclick="atualiza_senha">
+   <br><br>
+    <button onclick="configura_senha_wifi()" id="configura_senha">Alterar</button>&nbsp;&nbsp;
+    <span class="aviso">  O dispositivo será reiniciado após a alteração.</span>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend> Alterar Login/Senha Administrador </legend>
+    Novo User:&nbsp;&nbsp;
+   <input type="text" name="login_admin" id="login_admin" onclick="atualiza_senha">
+   <br><br>
+    Nova Senha:  
+   <input type="password" name="senha_admin" id="senha_admin" onclick="atualiza_senha">
+   <br><br>
+    <button onclick="configura_senha_admin()" id="configura_senha">Alterar</button>
+    
+  </fieldset>
+  <br>
+  <footer>PUR Equipamentos Industriais</footer>
+</div>
+
+<script type="text/javascript"> 
+// script para a página de Configurações
+var rtcConfig = {data:0, hora:0};
+var config_senha = {ssid_wifi:'',senha_wifi:'',login_admin:'',senha_admin:'' };
+const link = 'http://192.168.1.1/';
+
+document.body.onload = buscaDataHora();
+
+function rtcInput() {
+  let stringData = document.getElementById('rtcData').value + 'T' + document.getElementById('rtcHora').value + ':00-03:00';
+  let epoch = new Date(stringData);
+  epoch = epoch.getTime() / 1000;
+  return epoch;
+}
+
+function atualiza_senha(){
+  config_senha.ssid_wifi = document.getElementById('ssid_wifi').value;  
+  config_senha.ssid_wifi = String(config_senha.ssid_wifi);                 
+  config_senha.senha_wifi = document.getElementById('senha_wifi').value;  
+  config_senha.senha_wifi = String(config_senha.senha_wifi);     
+  config_senha.login_admin = document.getElementById('login_admin').value;  
+  config_senha.login_admin = String(config_senha.login_admin);     
+  config_senha.senha_admin = document.getElementById('senha_admin').value;  
+  config_senha.senha_admin = String(config_senha.senha_admin);     
+}
+
+function check_wifi_campo(){
+  let campoVazio = false;  
+  if(document.getElementById("ssid_wifi").value === ''){
+    alert('Campo de ssid wifi não pode ficar vazio.');
+    campoVazio = true;	
+  }else if(document.getElementById("senha_wifi").value === ''){
+    alert('Campo de senha wifi não pode ficar vazio.');
+    campoVazio = true;	
+  }else if (document.getElementById("senha_wifi").value.length < 8)
+    {
+	    alert('A senha wifi deve conter no mínimo 8 dígitos!');
+	    campoVazio = true;
+	  }	     	
+  return campoVazio;
+
+}
+
+function check_admin_campo(){
+    let campoVazio = false;  
+   if(document.getElementById("login_admin").value === ''){
+    alert('Campo de login de administrador não pode ficar vazio.');
+    campoVazio = true;	
+  }else if(document.getElementById("senha_admin").value === ''){
+    alert('Campo de senha de administrador não pode ficar vazio.');
+    campoVazio = true;	
+  }else if (document.getElementById("senha_admin").value.length < 5)
+    {
+	    alert('A senha admin deve conter no mínimo 5 dígitos!');
+	    campoVazio = true;
+	  }	     	
+  return campoVazio;
+
+}
+
+
+function checkCampoVazio() {   // check para não permitir envio de dados vazios e matrícula de tamanho incorreto   
+  let campoVazio = false;  
+ 	
+  if (document.getElementById("rtcData").value === '') { 
+	  alert('Campos de Data e Hora não podem ficar vazios.');
+    campoVazio = true;	  
+  }  
+  else if(document.getElementById("rtcHora").value === '') {
+    alert('Campos de Data e Hora não podem ficar vazios.');
+    campoVazio = true;	  
+  }
+}
+
+function enviaDado(epoch) {
+  var xhr = new XMLHttpRequest();
+  if (!checkCampoVazio()) { 
+    xhr.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById('labelConfirmar').innerHTML = "Data e Hora atualizadas.";
+        setTimeout(function(){document.getElementById('labelConfirmar').innerHTML = ''}, 4000);
+        var data = document.getElementById('rtcData').value;
+        data += "T00:00:00-03:00";
+        data = (new Date (data)).toLocaleDateString();
+        document.getElementById('dataHora').value = data + "  " + document.getElementById('rtcHora').value + ":00";
+        setTimeout(function() {document.getElementById('rtcData').value = ''}, 4000);
+        setTimeout(function() {document.getElementById('rtcHora').value = ''}, 4000);
+      }
+      else if (this.readyState == 4 && this.status == 400) {
+        console.log('Falha ao enviar');
+        document.getElementById('labelConfirmar').innerHTML = "Erro: Falha ao enviar.";
+        setTimeout(function() {document.getElementById('labelConfirmar').innerHTML = ''}, 4000);
+      }
+    };
+    xhr.open("POST", link + 'rtc/', true);
+    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhr.send('epoch=' + rtcInput(epoch));
+  }
+} 
+
+function buscaDataHora() {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      console.log('Dado do RTC recebido');
+      let resposta = (JSON.parse(this.responseText)).epoch;
+      let formatoData = (new Date (resposta * 1000)).toLocaleDateString() + ' - ' + (new Date (resposta * 1000)).toLocaleTimeString();
+      document.getElementById('dataHora').value = formatoData;
+    }
+    else if (this.readyState == 4 && this.status == 400) {
+      console.log('Falha');
+    }
+  };
+  xhr.open("GET", link + "rtc/", true);
+  xhr.send();  
+}
+
+function apagaLogs() {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      console.log("Comando apagaLogs enviado. status:" + this.status);
+    }
+    else if (this.readyState == 4 && this.status == 400) {
+      console.log("comando apagaLogs não enviado. status:" + this.status)
+    }
+  };
+  xhr.open("POST", link + 'apagar/', true);
+  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.send('tipo=log');
+}
+
+function apagaTudo() {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      console.log("Comando apagaTudo enviado. status:" + this.status);
+    }
+    else if (this.readyState == 4 && this.status == 400) {
+      console.log("comando apagaTudo não enviado. status:" + this.status)
+    }
+  };
+  xhr.open("POST", link + 'apagar/', true);
+  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.send('tipo=tudo');
+}
+
+function configura_senha_wifi() {
+
+  var xhr = new XMLHttpRequest();
+  if (!check_wifi_campo()) {
+  xhr.onreadystatechange = function() {
+
+    
+    if (this.readyState == 4 && this.status == 200) {
+      alert('O dispositivo será reiniciado.');
+      console.log("Comando configuarar enviado" + this.status);
+    }
+    else if (this.readyState == 4 && this.status == 400) {
+      console.log("comando configuarar não enviado. status:" + this.status)
+    }
+  };
+  
+  xhr.open("POST", link + 'configurar/', true);
+  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.send("ssid_wifi=" + config_senha.ssid_wifi + "&senha_wifi=" + config_senha.senha_wifi);
+}
+}
+
+function configura_senha_admin() {
+
+
+  var xhr = new XMLHttpRequest();
+  if (!check_admin_campo()) {
+
+
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      console.log("Comando configuarar enviado" + this.status);
+    }
+    else if (this.readyState == 4 && this.status == 400) {
+      console.log("comando configuarar não enviado. status:" + this.status)
+    }
+  };
+  xhr.open("POST", link + 'configurar/', true);
+  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.send("login_admin=" + config_senha.login_admin + "&senha_admin=" + config_senha.senha_admin);
+}
+}
+
+</script>
+</body>
+</html>
+
+
