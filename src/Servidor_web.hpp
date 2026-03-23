@@ -1,6 +1,6 @@
 #ifndef SERVIDOR_WEB_H
 #define SERVIDOR_WEB_H
-
+ 
 #include <WiFi.h>
 #include <WebServer.h>
 #include <SPIFFS.h>
@@ -9,14 +9,17 @@
 #include <Arduino.h>
 #include "logs.hpp"
 //#include "ESPAsyncWebServer.h"
-
+ 
 #define SERVIDOR_INICIADO_SUCESSO 0
 #define SERVIDOR_ERRO_SPIFFS 1
-
+ 
 #define MAX_USUARIOS 350
-
+ 
 void verifica_login();
+bool verifica_nivel(int numb);
 void usuarios_conectados();
+void abrir_server(bool status);
+void fechar_server();
 byte setup_servidor();
 void check_client();
 void obter_usuario();
@@ -32,4 +35,7 @@ void formatar_dados(String nome, unsigned long matricula, unsigned long nivel,un
 void apagar_logs();
 void carregarConfiguracoes();
 void configurar_senha();
+void name_wifi();
+void name_local();
+void save_local();
 #endif

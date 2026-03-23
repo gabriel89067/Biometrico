@@ -286,13 +286,16 @@ byte ler_resultado_auto_identificacao(unsigned long *saida)
   int leitura;
   
   leitura = Serial2.read();
-  if (leitura == -1)
+  if (leitura == -1){
     return RESULT_NADA_DISPONIVEL;
-  else if (leitura == START_BYTE)
+   }else if (leitura == START_BYTE)
   {
+    Serial.println("////////////////////////////////22");
     for (int i=0; i<sizeof(dado); i++)
     {
+      
       dado[i] = byte(Serial2.read());
+      Serial.println(dado[i]);
     }
     if (dado[7] == RESULT_SUCCEEDED)
     {
@@ -300,8 +303,10 @@ byte ler_resultado_auto_identificacao(unsigned long *saida)
         dado[i] = byte(Serial2.read());
       for (int i=0; i<4; i++) //Ignora o CRC de dados
         Serial2.read();
+      Serial.println("////////////////////////////////55");
       return char_to_long(dado, TAMANHO_FPID, saida);
     }
+    Serial.println("////////////////////////////////33");
     return RESULT_FP_NAO_ENCONTRADA; //A digital foi lida mas nao existe nenhum usuario associado
   }
   else //Houve um problema de sincronismo e veio lixo
@@ -309,6 +314,7 @@ byte ler_resultado_auto_identificacao(unsigned long *saida)
     Serial.print("\nAlgo estranho: ");
     Serial.println(leitura);
   }
+  Serial.println("////////////////////////////////44");
   return RESULT_NADA_DISPONIVEL;
 }
 

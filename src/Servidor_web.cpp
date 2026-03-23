@@ -5,8 +5,9 @@
 #include "logs.hpp"
 
 WebServer server(80);
+int limites[4] = {0, 335, 10, 5};
 bool server_logado = false;
-String ssid_wifi, login_admin, senha_admin, senha_wifi;
+String ssid_wifi, login_admin, senha_admin, senha_wifi,local;
 unsigned int matriculas[MAX_USUARIOS];
 String nomes[MAX_USUARIOS];
 unsigned long epoch_atual = 1593779905UL;
@@ -23,7 +24,7 @@ void usuarios_conectados()
 
 byte setup_servidor()
 {
-
+Serial.println("Abriu servidor");
   if (!SPIFFS.begin(true))
   {
     Serial.println("Falha ao montar SPIFFS");
@@ -101,12 +102,15 @@ byte setup_servidor()
   server.on("/rtc/", HTTP_POST, alterar_rtc);
 
   server.on("/login/", HTTP_POST, verifica_login); ////////////
-
+  server.on("/wifi/",HTTP_GET,name_wifi);
+  server.on("/local/",HTTP_GET,name_local);
+  server.on("/local/",HTTP_POST,save_local);
   server.on("/configurar/", HTTP_POST, configurar_senha); ///////////////
 
   server.on("/apagar/", HTTP_POST, apagar_logs);
 
   server.on("/logs/", HTTP_GET, obter_logs);
+
 
   // HTTP_POST, HTTP_PUT também servem
   server.onNotFound(handle_NotFound);
@@ -136,15 +140,22 @@ void verifica_login()
   {
     Serial.println("entrou 1");
     server.serveStatic("/pag_home.html", SPIFFS, "/pag_home.html");
+
     server.serveStatic("/pag_datalog.html", SPIFFS, "/pag_datalog.html");
+
     server.serveStatic("/pag_cadastro.html", SPIFFS, "/pag_cadastro.html");
+
     server.serveStatic("/pag_usuarios.html", SPIFFS, "/pag_usuarios.html");
+
     server.serveStatic("/pag_rtc.html", SPIFFS, "/pag_rtc.html");
+
     server.serveStatic("/pag_contato.html", SPIFFS, "/pag_contato.html");
+
     server.serveStatic("/pag_sobre.html", SPIFFS, "/pag_sobre.html");
 
-    server.sendHeader("Location", "/pag_home.html",true);
+    server.sendHeader("Location", "/pag_home.html", true);
     server.send(302, "text/plain", "");
+
     server.send(200, "text/json", "{\"codigo\": 0}");
     Serial.println("Arquivo gravado com sucesso");
     return;
@@ -158,6 +169,100 @@ void verifica_login()
   }
 }
 
+void abrir_server(bool status){
+  /*
+  String pagina = status ? "/pag_home.html" : "/pag_erro.html";
+  /*
+  server.serveStatic("/pag_home.html", SPIFFS, "/pag_home.html");
+
+    server.serveStatic("/pag_datalog.html", SPIFFS, "/pag_datalog.html");
+
+    server.serveStatic("/pag_cadastro.html", SPIFFS, "/pag_cadastro.html");
+
+    server.serveStatic("/pag_usuarios.html", SPIFFS, "/pag_usuarios.html");
+
+    server.serveStatic("/pag_rtc.html", SPIFFS, "/pag_rtc.html");
+
+    server.serveStatic("/pag_contato.html", SPIFFS, "/pag_contato.html");
+
+    server.serveStatic("/pag_sobre.html", SPIFFS, "/pag_sobre.html");
+  */
+ /*
+server.serveStatic("/pag_home.html", SPIFFS, "/pag_home.html");
+server.serveStatic("/pag_erro.html", SPIFFS, "/pag_erro.html");
+
+  server.on("/pag_home.html", HTTP_GET, [pagina]() {
+ 
+    server.sendHeader("Location", pagina, true);
+
+  //server.send(302, "text/plain", ""); // Redirecionamento 302
+});
+ */
+// E as rotas estáticas ficam fixas (descomente aquelas que você comentou)
+
+
+/*
+  server.on("/pag_home.html", HTTP_GET, [pagina]() {
+  if(SPIFFS.exists(pagina)){
+  File file = SPIFFS.open(pagina, "r");
+  server.streamFile(file, "text/html");
+  file.close();
+  server.send(302, "text/plain", "");
+  }else{
+    server.send(404, "text/plain", "Arquivo nao encontrado no SPIFFS");
+  }
+  
+
+  });*/
+  server.enableCrossOrigin(true); // Habilita diferentes origens - Dev apenas
+  server.enableCORS(true);        // Habilita CORS - Dev apenas
+  // server.on("/", HTTP_GET, handler_home);
+  // File paginaInicial = SPIFFS.open("/home.html");
+  Serial.println("OKOKOKOK SERVER");
+
+  server.serveStatic("/", SPIFFS, "/pag_login.html"); // Pagina inicial
+
+  // Scripts
+  server.serveStatic("/papaParse.js", SPIFFS, "/papaParse.js");
+  server.serveStatic("/usuariosRequisicao.js", SPIFFS, "/usuariosRequisicao.js");
+
+  server.on("/login/", HTTP_POST, verifica_login); ////////////
+
+  server.on("/usuarios/", HTTP_GET, obter_usuario);
+  server.on("/usuarios/", HTTP_POST, criar_usuario);
+  server.on("/usuarios/", HTTP_PUT, atualizar_usuario);
+  server.on("/usuarios/", HTTP_DELETE, deletar_usuario);
+  server.on("/logs/quantidade/", HTTP_GET, obter_quantidade_logs);
+  server.on("/rtc/", HTTP_GET, obter_rtc);
+  server.on("/rtc/", HTTP_POST, alterar_rtc);
+
+  server.on("/login/", HTTP_POST, verifica_login); ////////////
+  server.on("/wifi/",HTTP_GET,name_wifi);
+  server.on("/configurar/", HTTP_POST, configurar_senha); ///////////////
+
+  server.on("/apagar/", HTTP_POST, apagar_logs);
+
+  server.on("/logs/", HTTP_GET, obter_logs);
+
+
+  // HTTP_POST, HTTP_PUT também servem
+  server.onNotFound(handle_NotFound);
+
+  for (int i = 0; i < MAX_USUARIOS; i++)
+  {
+    matriculas[i] = i;
+    nomes[i] = "Pessoa " + String(i);
+    // Serial.println("Dados " + String(nomes[i]) );
+  }
+
+  server.begin();
+  Serial.println("Servidor iniciado");
+
+}
+void fechar_server(){
+  Serial.println("Fechou servidor");
+  server.stop();
+}
 void check_client()
 {
   server.handleClient();
@@ -245,6 +350,47 @@ void obter_usuario()
   server.send(200, "text/json", resposta);
 }
 
+bool verifica_nivel(int numb)
+{
+
+  unsigned long nivel;
+  int count_nivel = 0;
+  unsigned int qtd = quantidade_header();
+  byte dados_header[qtd * (unsigned long)(HEADER_DATA_SIZE)];
+  Serial.print("Qtd: ");
+  Serial.println(qtd);
+  obter_header(dados_header);
+  unsigned int posicao; // quantidade = 0;
+
+  //    Serial.println(qtd);
+  for (int i = 0; i < qtd; i++)
+  {
+    posicao = i * (int)(HEADER_DATA_SIZE);
+    Serial.print("posição: ");
+    Serial.println(posicao);
+    for (int i = 0; i < 7; i++)
+    {
+      Serial.print("Header: ");
+      Serial.println(dados_header[posicao + i]);
+    }
+    nivel = (dados_header[posicao + 7]);
+    if (nivel == numb)
+    {
+      count_nivel++;
+    }
+    posicao += 8;
+  }
+  if (count_nivel < limites[numb])
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+  return false;
+}
 void criar_usuario()
 {
   unsigned int resposta, tamanho;
@@ -272,6 +418,12 @@ void criar_usuario()
 
   if (validade == "NaN")
     Serial.println("Validade indefinida");
+  /////////////////////////// verifica nivel
+  if (!verifica_nivel(nivel.toInt()))
+  {
+    server.send(400, "text/json", "{\"codigo\": 8}"); // ID invalida
+    return;
+  }
 
   tamanho = matricula.length();
   matricula_long = matricula.toInt();
@@ -292,6 +444,7 @@ void criar_usuario()
     if (resposta == RESULT_SUCCEEDED)
     //    if (true) //Temporario
     {
+      Serial.println("entrou na gravaçao da biometria");
       formatar_dados(nome, matricula_long, nivel.toInt(), validade.toInt(), dados);
       adicionar_item_header(dados);
       server.send(200, "text/json", "{\"codigo\": 0}"); // Usuario registrado
@@ -623,6 +776,8 @@ void carregarConfiguracoes()
         login_admin = valor;
       if (chave == "senha_admin")
         senha_admin = valor;
+      if(chave == "local")
+        local = valor; 
     }
   }
   arquivo.close();
@@ -681,9 +836,12 @@ void configurar_senha()
   if (tamanho_senha_admin == 0 && tamanho_senha_wifi != 0)
   {
     file.println("ssid_wifi=" + ssid_wifi_1);
+    ssid_wifi= ssid_wifi_1;
     file.println("senha_wifi=" + senha_wifi_1);
+    senha_wifi= senha_wifi_1;
     file.println("login_admin=" + login_admin);
     file.println("senha_admin=" + senha_admin);
+    file.println("local=" + local);
   }
 
   if (tamanho_senha_wifi == 0 && tamanho_senha_admin != 0)
@@ -691,15 +849,23 @@ void configurar_senha()
     file.println("ssid_wifi=" + ssid_wifi);
     file.println("senha_wifi=" + senha_wifi);
     file.println("login_admin=" + login_admin_1);
+    login_admin= login_admin_1;
     file.println("senha_admin=" + senha_admin_1);
+    senha_admin= senha_admin_1;
+    file.println("local=" + local);
   }
 
   if (tamanho_senha_wifi != 0 && tamanho_senha_admin != 0)
   {
-    file.println("ssid_wifi=" + ssid_wifi);
-    file.println("senha_wifi=" + senha_wifi);
+    file.println("ssid_wifi=" + ssid_wifi_1);
+    ssid_wifi= ssid_wifi_1;
+    file.println("senha_wifi=" + senha_wifi_1);
+    senha_wifi= senha_wifi_1;
     file.println("login_admin=" + login_admin_1);
+    login_admin= login_admin_1;
     file.println("senha_admin=" + senha_admin_1);
+    senha_admin= senha_admin_1;
+    file.println("local=" + local);
   }
 
   server.send(200, "text/json", "{\"codigo\": 0}");
@@ -708,4 +874,39 @@ void configurar_senha()
   delay(1000);
 
   ESP.restart(); // renicia
+}
+
+void name_wifi()
+{
+  Serial.println(ssid_wifi);
+  server.send(200, "text/json", "{\"name_wifi\":\"" + String(ssid_wifi) + "\"}");
+}
+
+void name_local()
+{
+  Serial.println(local);
+  server.send(200, "text/json", "{\"local\":\"" + String(local) + "\"}");
+}
+void save_local()
+{ 
+  String local_1;
+
+  File file = SPIFFS.open("/Passwords.txt", FILE_WRITE);
+  if (!file)
+  {
+    Serial.println("Erro ao abrir arquivo para escrita");
+    return;
+  }
+
+  
+  local_1 = server.arg("local");
+ 
+    file.println("ssid_wifi=" + ssid_wifi);
+    file.println("senha_wifi=" + senha_wifi);
+    file.println("login_admin=" + login_admin);
+    file.println("senha_admin=" + senha_admin);
+    file.println("local=" + local_1);
+    local = local_1;
+  server.send(200, "text/json", "{\"codigo\": 0}");
+  file.close();
 }

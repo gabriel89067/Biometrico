@@ -1,5 +1,5 @@
-ssid_wifi=Biometrico_5
+ssid_wifi=Biometrico
 senha_wifi=12345678
 login_admin=admin
 senha_admin=admin
-local=Biometrico_5
+local=centro_1
