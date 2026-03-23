@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle Biométrico de Acesso Página Configurações</title>
-  <style> html {font-family: Eurostile;}
+  <style> html {font-family: Arial;}
 body  {
   margin: 0;
 }
 footer {        /* footer PUR */
-  background-color: #8B0000;
+  background-color: #d12429;
   padding: 10px;
   text-align: center;
   color: white;
@@ -31,11 +31,11 @@ li a {
   text-decoration: none;
 }
 li a.active {
-  background-color: #8B0000;
+  background-color: #d12429;
   color: white;
 }
 li a:hover:not(.active) {
-  background-color: #555;
+  background-color: #706f6f;
   color: white;
 }
 .aviso{
@@ -48,15 +48,22 @@ li a:hover:not(.active) {
   <ul>
     <li><a href="pag_home.html">HOME</a></li>
     <li><a href="pag_datalog.html">DATALOG</a></li>
-    <li><a href="pag_cadastro.html">CADASTRO</a></li>
-    <li><a href="pag_usuarios.html">USUÁRIOS</a></li>
+    <li><a href="pag_cadastro.html">CADASTRO DE USUÁRIOS</a></li>
+    <li><a href="pag_usuarios.html">USUÁRIOS CADASTRADOS</a></li>
     <li><a class="active" href="pag_rtc.html">CONFIGURAÇÕES</a></li>
-    <li><a href="pag_contato.html">CONTATO</a></li>
     <li><a href="pag_sobre.html">SOBRE</a></li>
+    <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+    &nbsp;&nbsp;PUR Equipamentos Industriais Ltda.<br>
+    &nbsp;&nbsp;CNPJ 00.439.965/0001-85<br>
+    &nbsp;&nbsp;Av. Geraldo Rocha, 1.300 – Chácara Cotia<br>
+    &nbsp;&nbsp;CEP 32183-054 – Contagem/MG<br>
+    &nbsp;&nbsp;www.pur.ind.br<br>
+    &nbsp;&nbsp;E-mail: pur@pur.ind.br<br>
+    &nbsp;&nbsp;Tel.: (31) 3045.8222
   </ul>
 
-<div style="margin-left:25%;padding:1px 16px;height:1000px;">
-  <h2>CONFIGURAÇÕES DATA E HORA </h2>
+<div style="margin-left:25%;padding:1px 16px;height:600px;">
+  <h2>CONFIGURAÇÕES</h2>
 
   <fieldset>
     <legend>Data e Hora</legend>
@@ -80,7 +87,7 @@ li a:hover:not(.active) {
   <br>
   <fieldset>
     <legend> Alterar Login/Senha Wifi </legend>
-    Novo Ssid Wifi:&nbsp;&nbsp;
+    Novo SSID Wifi:&nbsp;&nbsp;
    <input type="text" name="ssid_wifi" id="ssid_wifi" onclick="atualiza_senha">
    <br><br>
     Nova Senha Wifi:

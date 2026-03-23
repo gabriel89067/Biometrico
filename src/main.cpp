@@ -17,7 +17,7 @@ bool status_sistema = true;
 byte buffer_saida[100];
 unsigned int LED_PIN = 2;
 char data_hora[32];
-unsigned long duracao;
+unsigned long duracao,pagina;
 //unsigned int quantidade_reinicios = 0;
 //bool apagar_quantidade_reinicios = false;
 
@@ -71,6 +71,7 @@ void setup()
   //delay(1000);
 //  Serial.println("Sistema pronto");
   duracao = millis();
+  pagina = millis();
   bufferTx[0] = ID_prod_pur;               //CABEÇALHO DE SINCRONISMO 1_ Produto PUR
   bufferTx[1] = ID_prod_bio;               //CABEÇALHO DE SINCRONISMO 2_ Produto Biometrico (0x20 ou 32)
   bufferTx[2] = ID_unid_sen ;              //ID unidade sensora biometrico
@@ -134,7 +135,7 @@ void setup()
   while (!lora_receive_data() && (millis() - aguardando < 10000));
   if (millis() - aguardando >= 10000) {
     display_escrever_completo("Unidade remota\nnao respondeu");
-    while(1);
+    while(!lora_receive_data());
   }
   else {
     if (lora_msg_1[8] == 0x4C)
@@ -152,7 +153,7 @@ void setup()
     digitalWrite(LED_PIN, !status_sistema);
   }
   pisca_led(10);
-  display_escrever_completo("Sistema\ninicializado");
+  display_escrever_completo("Sistema\niniciado");
   delay(2000);
   atualizar_display();
   digitalWrite(LED_BLOQ, status_sistema);
@@ -177,7 +178,12 @@ void loop()
     }
       
   }
-  
+  if(millis() - pagina >= 120000){
+    //fechar_server();
+    //delay(1001);
+   // abrir_server(true);
+   // pagina = millis();
+  }
   
 //  Serial.println(data_hora);
 //  display_escrever_completo(data_hora); //Essa parte comentada esta dando problemas: a conexao fica reiniciando
@@ -206,16 +212,16 @@ void loop()
 
   //Descomente este bloco para testar o reconhecimento automático de digital
   resposta = ler_resultado_auto_identificacao(&matricula);
-  if (resposta == RESULT_SUCCEEDED)
+  if (resposta == RESULT_SUCCEEDED) /////////////////////////////////////////////////////////////////// digital valida e possui cadastro
   {
     matricula_end = procurar_matricula(matricula);
     Serial.print("\nUsuario identificado. Matricula: ");
     Serial.println(matricula);
-    if (matricula_end != -1)
+    if (matricula_end != -1) ////////////////////////////////////////////////////////////////////////////// matricula valida
     {
       unsigned long epoch = obter_data_horario();
       validade = pegar_validade(matricula_end);
-      if ((validade >= epoch) || (validade == 0)) //Validade ok ou indefinida (0)
+      if ((validade >= epoch) || (validade == 0)) //Validade ok ou indefinida (0) ////////////////////////////////// validade
       {
         Serial.println("Usuario tem validade OK");
 //        status_sistema = !status_sistema;
@@ -284,10 +290,10 @@ void loop()
           {
             Serial.println("Abertura concluida: feedback recebido");
             lora_reset();
-            if (adicionar_log(saida) == LOG_GRAVADO_SUCESSO) 
+            if (adicionar_log(saida) == LOG_GRAVADO_SUCESSO)  /////////////////////////////////////////////// so grava qunado tem o retorno de abertura
             {
               Serial.println("Log gravado");
-              display_escrever_completo("Acesso liberado\nEquip. ligado");
+              display_escrever_completo("Acesso liberado\nEquip. ligado"); //////////////////////////////////////////// acesso liberado eq ligado
               digitalWrite(LED_PIN, true);
               status_sistema = false;
               digitalWrite(LED_BLOQ, status_sistema);
@@ -339,7 +345,7 @@ void loop()
           else {
             Serial.println("Abertura concluida: feedback recebido");
             lora_reset();
-            if (adicionar_log(saida) == LOG_GRAVADO_SUCESSO) {
+            if (adicionar_log(saida) == LOG_GRAVADO_SUCESSO) { //////////////////////////////////////////// acesso liberado eq desligado
               Serial.println("Log gravado");
               display_escrever_completo("Acesso liberado\nEquip. desligado");
               digitalWrite(LED_PIN, false);
